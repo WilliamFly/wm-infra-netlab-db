@@ -43,3 +43,9 @@ variable "db_app_password" {
   type        = string
   sensitive   = true
 }
+
+variable "db_disk_size_gb" {
+  description = "Disk size (GB) for the DB VM — the base cloud image defaults to ~2.4GB, too small for Postgres + data growth over time"
+  type        = number
+  default     = 20
+}

@@ -37,6 +37,11 @@ for the full story and the planned real fix (Packer-baked images).
 
 **Until that's built, after `terraform apply`, do this:**
 
+0. Wait for cloud-init to actually finish before touching the VM further:
+   ```bash
+   ssh -J netlab-admin@10.0.1.10 netlab-admin@10.0.3.20
+   cloud-init status --wait
+   ```
 1. In `wm-infra-netlab-network-foundation/ansible`, temporarily open
    `data-net`'s egress:
    ```bash

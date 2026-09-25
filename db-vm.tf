@@ -23,6 +23,10 @@ resource "libvirt_volume" "db_disk" {
   pool           = var.storage_pool
   base_volume_id = libvirt_volume.ubuntu_base.id
   format         = "qcow2"
+  # Base cloud image defaults to ~2.4GB — fine for a moment, not for a
+  # persistent database that accumulates data/WAL over time. See the
+  # same issue hit (and fixed) in wm-infra-netlab-app-rust.
+  size = var.db_disk_size_gb * 1024 * 1024 * 1024
 }
 
 resource "libvirt_cloudinit_disk" "db" {
