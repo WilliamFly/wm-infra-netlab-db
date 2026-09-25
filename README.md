@@ -1,0 +1,69 @@
+# wm-infra-netlab-db
+
+The shared Postgres database for [wm-infra-netlab](https://github.com/WilliamFly/wm-infra-netlab).
+One owning repo for a resource every app needs — the Rust app first,
+the Node app later — so there's exactly one place that provisions and
+can destroy it. See
+[ADR 0004](https://github.com/WilliamFly/wm-infra-netlab/blob/main/docs/decisions/0004-shared-db-own-repo.md)
+for why this isn't part of `app-rust` even though only one app uses it
+so far.
+
+| | |
+|---|---|
+| Hostname | `netlab-db` |
+| Admin user | `netlab-admin` (SSH key only) |
+| data-net IP | `10.0.3.20` |
+| Postgres | Listens on all interfaces, `pg_hba.conf` allows `10.0.2.0/24` (private-net) only |
+| DB / role | Created on boot from `db_name`/`db_app_user`/`db_app_password` vars |
+
+This repo does **not** reference `wm-infra-netlab-network-foundation`'s
+Terraform state — it imports its own copy of the base image and attaches
+to `data-net` by name (`network_name`, not `network_id`), same decoupling
+pattern used throughout this project.
+
+Hardening (`harden-baseline`) is deliberately not applied yet — proving
+connectivity with a real service came first; hardening can be layered on
+via Ansible the same way the router got it.
+
+## Consuming this from an app repo
+
+Apps connect by IP — they never provision this VM themselves:
+```
+Host:     10.0.3.20
+Database: (value of db_name, default netlab_app)
+User:     (value of db_app_user, default app_user)
+Password: (value of db_app_password — get this out-of-band, never committed)
+```
+
+## Prerequisites
+
+- `network-foundation`'s networks + router already applied and working
+- Terraform >= 1.9, `dmacvicar/libvirt` provider `>= 0.8.1, < 0.9`
+
+## Usage
+
+```bash
+cp terraform.tfvars.example terraform.tfvars
+# edit terraform.tfvars: set base_image_path, ssh_public_key, db_app_password
+
+terraform init
+terraform plan
+terraform apply
+```
+
+## Verifying
+
+```bash
+ssh -J netlab-admin@10.0.1.10 netlab-admin@10.0.3.20
+```
+
+Inside the DB VM:
+```bash
+sudo -u postgres psql -c "\l"   # should list the app database
+```
+
+From a VM on `private-net` (once one exists), confirm Postgres is
+reachable through the router:
+```bash
+nc -zv 10.0.3.20 5432
+```

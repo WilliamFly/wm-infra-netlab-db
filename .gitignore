@@ -1,0 +1,36 @@
+# --- Secrets & credentials (never commit) ---
+*.tfvars
+!*.tfvars.example
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!*.pub.key
+vault_pass*
+.vault-password
+
+# --- Terraform ---
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+
+# --- Ansible ---
+*.retry
+ansible/roles/harden-baseline/
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# --- Logs / local scratch ---
+*.log
+.tmp/
+scratch/
