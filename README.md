@@ -25,6 +25,43 @@ Hardening (`harden-baseline`) is deliberately not applied yet — proving
 connectivity with a real service came first; hardening can be layered on
 via Ansible the same way the router got it.
 
+## ⚠️ Provisioning currently requires a manual step
+
+`data-net` has no route to the internet (by design — see
+[ADR 0001](https://github.com/WilliamFly/wm-infra-netlab/blob/main/docs/decisions/0001-network-segmentation.md)),
+which means cloud-init's live `apt install postgresql` step **fails
+silently** on first boot. `terraform apply` alone does NOT give you a
+working Postgres — see
+[ADR 0005](https://github.com/WilliamFly/wm-infra-netlab/blob/main/docs/decisions/0005-isolated-tier-provisioning.md)
+for the full story and the planned real fix (Packer-baked images).
+
+**Until that's built, after `terraform apply`, do this:**
+
+1. In `wm-infra-netlab-network-foundation/ansible`, temporarily open
+   `data-net`'s egress:
+   ```bash
+   ansible-playbook playbook-router.yml -e router_temp_allow_data_egress=true
+   ```
+2. SSH into this VM and finish setup by hand:
+   ```bash
+   ssh -J netlab-admin@10.0.1.10 netlab-admin@10.0.3.20
+
+   sudo apt update
+   sudo apt install -y postgresql
+   echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/16/main/postgresql.conf
+   echo "host all all 10.0.2.0/24 scram-sha-256" | sudo tee -a /etc/postgresql/16/main/pg_hba.conf
+   sudo systemctl restart postgresql
+   sudo -u postgres psql -c "CREATE USER app_user WITH PASSWORD 'your-real-password';"
+   sudo -u postgres psql -c "CREATE DATABASE netlab_app OWNER app_user;"
+   ```
+   (Use the actual `db_app_user`/`db_name`/`db_app_password` from your
+   `terraform.tfvars`, not necessarily these literal defaults.)
+3. Close the egress hole again:
+   ```bash
+   # back in network-foundation/ansible
+   ansible-playbook playbook-router.yml -e router_temp_allow_data_egress=false
+   ```
+
 ## Consuming this from an app repo
 
 Apps connect by IP — they never provision this VM themselves:
