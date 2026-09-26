@@ -1,0 +1,6 @@
+roles:
+  - src: https://github.com/WilliamFly/wm-infra-netlab-harden-baseline
+    name: harden-baseline
+collections:
+  - name: community.general
+  - name: ansible.posix

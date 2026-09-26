@@ -1,0 +1,7 @@
+harden_admin_user: netlab-admin
+harden_admin_ssh_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMr+71BAER8MDi7ApJ/OGvIeglgRWj4aKWw60f+5+TEq devops second key"
+
+harden_ufw_allowed_ports:
+  - { port: "22", proto: "tcp", comment: "SSH" }
+  - { port: "5432", proto: "tcp", from: "10.0.2.0/24", comment: "Postgres - private-net only" }

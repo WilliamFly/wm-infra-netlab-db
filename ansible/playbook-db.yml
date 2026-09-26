@@ -1,0 +1,6 @@
+---
+- name: Harden DB VM
+  hosts: db
+  become: true
+  roles:
+    - harden-baseline
