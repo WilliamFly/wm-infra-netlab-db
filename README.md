@@ -109,3 +109,27 @@ reachable through the router:
 ```bash
 nc -zv 10.0.3.20 5432
 ```
+
+## Security / Hardening
+
+This VM has `harden-baseline` applied via `ansible/playbook-db.yml`:
+
+- SSH hardened (no root login, no password auth)
+- `ufw` enabled, default-deny incoming
+- Port 5432 (Postgres) is scoped to `10.0.2.0/24` (private-net) only —
+  not reachable from data-net's other hosts or the internet
+- `fail2ban` active on sshd
+- `unattended-upgrades` enabled
+
+Re-run after any change to `ansible/group_vars/db.yml`:
+
+```bash
+cd ansible
+ansible-playbook playbook-db.yml
+```
+
+**Note:** because `data-net` has no internet route by design (see ADR 0005 in
+`wm-infra-netlab`), any playbook run that needs to *install* a new package
+(not just configure one already present) requires the same temporary egress
+toggle documented above — flip `router_temp_allow_data_egress=true` on the
+router, run the playbook, flip it back off.
